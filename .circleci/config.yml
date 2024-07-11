@@ -1,17 +1,23 @@
-version: 2.1 #comment for testing
-
+version: 2.1
 workflows:
   version: 2
   build:
     jobs:
-      - build:
+      - build1:
           filters:
             branches:
               only:
                 - main
+      - deploy:
+          filters:
+            branches:
+              only:
+                - main
+          requires:
+            - build1
 
 jobs:
-  build:
+  build1:
     working_directory: ~/SimpleApplication-CA
     docker:
       - image: circleci/node:10.16.3
@@ -19,13 +25,21 @@ jobs:
       - checkout
       - run:
           name: update-npm
-          command: 'sudo npm install -g npm@5'
+          command: 'sudo npm install -g npm@6'
       - restore_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
-          name: install-npm
+          name: install-npm-we
           command: npm install
       - save_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
             - ./node_modules
+
+  deploy:
+    docker:
+      - image: circleci/node:10.16.3
+    steps:
+      - run:
+          name: deploy-application
+          command: ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_PUBLIC_DNS "rm -rf SimpleApplication-CA/; git clone https://github.com/SCBNCI/SimpleApplication-CA.git; source SimpleApplication-CA/deploy.sh"
