@@ -3,7 +3,7 @@ workflows:
   version: 2
   build:
     jobs:
-      - build1:
+      - build:
           filters:
             branches:
               only:
